@@ -11,12 +11,21 @@
 ### [T1134 - Access Token Manipulation  访问令牌操作](https://attack.mitre.org/techniques/T1134/)
 
 > Tactic: Defense Evasion, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: User, Administrator
+>
 > Effective Permissions: SYSTEM
+>
 > Data Sources: API monitoring, Access tokens, Process monitoring, Process command-line parameters
+>
 > CAPEC ID: [CAPEC-633](https://capec.mitre.org/data/definitions/633.html)
-> Contributors: Tom Ueltschi @c_APT_ure; Travis Smith, Tripwire; Robby Winchester, @robwinchester3; Jared Atkinson, @jaredcatkinson
+>
+> Contributors: Tom Ueltschi @c_APT_ure; Travis Smith, Tripwire; Robby Winchester, @robwinchester3; 
+>
+> Jared Atkinson, @jaredcatkinson
+>
 > Version: 1.0
 
 #### 概述
@@ -44,12 +53,19 @@ Meterpreter 中的 payload 允许任意的令牌操作，并使用模拟令牌�
 ### [T1015 - Accessibility Features 辅助功能](https://attack.mitre.org/techniques/T1015/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator
+>
 > Effective Permissions: SYSTEM
+>
 > Data Sources: Windows Registry, File monitoring, Process monitoring
+>
 > CAPEC ID: [CAPEC-558](https://capec.mitre.org/data/definitions/558.html)
+>
 > Contributors: Paul Speulstra, AECOM Global Security Operations Center
+>
 > Version: 1.0
 
 Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前通过键组合启动，攻击者可以修改这些程序的启动方式，从而在不登录系统的情况下调用命令提示符或后门程序。
@@ -75,10 +91,15 @@ Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前
 ### [T1182 - AppCert DLLs 注入](https://attack.mitre.org/techniques/T1182/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, SYSTEM
+>
 > Effective Permissions: Administrator, SYSTEM
+>
 > Data Sources: Loaded DLLs, Process monitoring, Windows Registry
+>
 > Version: 1.0
 
 利用 AppCertDlls 注册表项来实现 DLL 注入。Windows 中的大量 API 函数（CreateProcess, CreateProcessAsUser, CreateProcessWithLoginW, CreateProcessWithTokenW, WinExec）都会加载处于注册表 `HKLM\System\CurrentControlSet\Control\Session Manager\AppCertDlls` 下的 DLL 文件。所以只需要在 AppCertDlls 中写入 DLL 的绝对路径，就可以将此注册表项下的 DLL 加载到调用 Windows API 函数每个的进程中。
@@ -90,9 +111,15 @@ Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前
 ### [T1103 - AppInit DLLs 注入](https://attack.mitre.org/techniques/T1103/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator
-> Data Sources: Loaded DLLs, System calls, Windows Registry, Process monitoring, Process command-line parameters
+>
+> Data Sources: Loaded DLLs, System calls, Windows Registry, Process monitoring, Process command-
+>
+> line parameters
+>
 > Version: 1.0
 
 利用 AppInit DLLs 注册表项来实现 DLL 注入。Windows 允许加载了 user32.dll 的进程加载处于注册表 `HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` 或 `HKLM\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` 下的 DLL 文件。所以只需要在 AppInit_DLLs 下写入 DLL 的绝对路径，并把数值改为 1，就可以使得所有加载 user32.dll 的进程全部加载目标路径的 DLL 文件。由于 user32.dll 是一个非常常用的库，在实际情况下，这个 DLL 几乎会被加载到每一个进程。
@@ -106,11 +133,17 @@ Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前
 ### [T1138 - Application Shimming 应用兼容性](https://attack.mitre.org/techniques/T1138/)
 
 > Tactic: Persistence,Privilege Escalation
+>
 > Platform: Windows
+>
 > System Requirements: Secure boot disabled on systems running Windows 8 and later
+>
 > Permissions Required: Administrator
+>
 > Effective Permissions: Administrator, SYSTEM
+>
 > Data Sources: Loaded DLLs, Process monitoring, Windows Registry
+>
 > Version: 1.0
 
 #### 概述
@@ -146,12 +179,19 @@ Application Shim（Microsoft Windows Application Compatibility Infrastructure/Fr
 ### [T1088 - Bypass User Account Control 绕过用户帐户控制](https://attack.mitre.org/techniques/T1088/)
 
 > Tactic: Defense Evasion, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: User, Administrator
+>
 > Effective Permissions: Administrator
+>
 > Data Sources: System calls, Process monitoring, Authentication logs, Process command-line parameters
+>
 > Defense Bypassed: Windows User Account Control
+>
 > Contributors: Stefan Kanthak; Casey Smith
+>
 > Version: 1.0
 
 Windows 用户帐户控制（User Account Control，UAC）允许程序通过提示用户是否对应用程序授权，来提升权限，以执行管理员权限下的任务，影响范围十分广泛。
@@ -165,14 +205,23 @@ Windows 用户帐户控制（User Account Control，UAC）允许程序通过提�
 ### [T1038 - DLL Search Order Hijacking DLL 搜索顺序劫持 ](https://attack.mitre.org/techniques/T1038/)
 
 > Tactic: Persistence, Privilege Escalation, Defense Evasion
+>
 > Platform: Windows
+>
 > System Requirements: Ability to add a DLL, manifest file, or .local file, directory, or junction.
+>
 > Permissions Required: User, Administrator, SYSTEM
+>
 > Effective Permissions: User, Administrator, SYSTEM
+>
 > Data Sources: File monitoring, DLL monitoring, Process monitoring, Process command-line parameters
+>
 > Defense Bypassed: Process whitelisting
+>
 > CAPEC ID: [CAPEC-471](https://capec.mitre.org/data/definitions/471.html)
+>
 > Contributors: Stefan Kanthak; Travis Smith, Tripwire
+>
 > Version: 1.0
 
 Windows 系统使用一种常见的方法来查找需要加载到程序中的 DLL 动态链接库，攻击者可能会利用 Windows DLL 的搜索顺序和模糊指定 DLL 的程序，来获得持久性和权限提升。
@@ -188,11 +237,17 @@ Windows 系统使用一种常见的方法来查找需要加载到程序中的 DL
 ### [T1157 - Dylib Hijacking Dylib 劫持](https://attack.mitre.org/techniques/T1157/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: macOS
+>
 > Permissions Required: User
+>
 > Effective Permissions: Administrator, root
+>
 > Data Sources: File monitoring
+>
 > CAPEC ID: [CAPEC-471](https://capec.mitre.org/data/definitions/471.html)
+>
 > Version: 1.0
 
 macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序中的 Dylib 动态链接库，攻击者可以利用模糊路径来植入 Dylib，以获得特权升级或持久性。
@@ -206,11 +261,17 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1514 - Elevated Execution with Prompt 命令行权限提升](https://attack.mitre.org/techniques/T1514/)
 
 > Tactic: Privilege Escalation
+>
 > Platform: macOS
+>
 > Permissions Required: Administrator, User
+>
 > Effective Permissions: root
+>
 > Data Sources: File monitoring, Process monitoring, API monitoring
+>
 > Contributors: Erika Noerenberg, @gutterchurl, Carbon Black; Jimmy Astle, @AstleJimmy, Carbon Black
+>
 > Version: 1.0
 
 攻击者可以利用 `AuthorizationExecuteWithPrivileges` API 提示用户输入凭据，从而提升权限。这个 API 的最初目的是为应用程序开发人员提供一种使用 root 权限执行操作的简便方法，例如用于应用程序的安装或更新。当调用此 API 时，将提示用户输入他们的凭据，但不会验证请求 root 权限的程序来源是否可靠或者是否已经被恶意修改，攻击者可能会利用这个 API 结合钓鱼的方式来欺骗用户授权，以使恶意程序能够在 root 权限下执行。
@@ -220,11 +281,17 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1519 - Emond 守护进程](https://attack.mitre.org/techniques/T1519/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: macOS
+>
 > Permissions Required: Administrator
+>
 > Effective Permissions: root
+>
 > Data Sources: File monitoring, API monitoring
+>
 > Contributors: Ivan Sinyakov
+>
 > Version: 1.0
 
 #### 概述
@@ -242,11 +309,17 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1068 - Exploitation for Privilege Escalation 漏洞利用](https://attack.mitre.org/techniques/T1068/)
 
 > Tactic: Privilege Escalation
+>
 > Platform: Linux, macOS, Windows
+>
 > System Requirements: In the case of privilege escalation, the adversary likely already has user permissions on the target system.
+>
 > Permissions Required: User
+>
 > Effective Permissions: User, Administrator, SYSTEM/root
+>
 > Data Sources: Windows Error Reporting, Process monitoring, Application logs
+>
 > Version: 1.1
 
 程序、服务、操作系统软件或内核本身可能存在漏洞，存在漏洞的程序可能以较高权限运行在操作系统中，攻击者可以利用这些漏洞来获得对系统更高级别的访问权限。
@@ -256,10 +329,15 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1181 - Extra Window Memory Injection EWM 注入](https://attack.mitre.org/techniques/T1181/)
 
 > Tactic: Defense Evasion, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, SYSTEM
+>
 > Data Sources: API monitoring, Process monitoring
+>
 > Defense Bypassed: Anti-virus, Host intrusion prevention systems, Data Execution Prevention
+>
 > Version: 1.0
 
 在创建窗口之前，基于图形化窗口的进程必须要注册一个 Windows 类，这时应用程序可以申请一小部分的额外内存空间（EWM），EWMI 的原理就是将恶意代码注入到资源管理器（Explorer）窗口的额外窗口内存中。
@@ -269,12 +347,19 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1044 - File System Permissions Weakness 文件系统权限缺漏](https://attack.mitre.org/techniques/T1044/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, User
+>
 > Effective Permissions: SYSTEM, User, Administrator
+>
 > Data Sources: File monitoring, Services, Process command-line parameters
+>
 > CAPEC ID: [CAPEC-17](https://capec.mitre.org/data/definitions/17.html)
+>
 > Contributors: Stefan Kanthak; Travis Smith, Tripwire
+>
 > Version: 1.0
 
 进程可以自动执行指定的二进制文件，如果不正确地设置了包含目标二进制文件的文件系统目录的权限或二进制文件本身的权限，则可能使用用户级权限用另一个二进制文件覆盖目标二进制文件，并由原始进程执行。如果原始进程和线程在更高的权限级别下运行，那么被替换的二进制文件也将在更高的权限级别下执行。
@@ -291,9 +376,15 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 ### [T1179 - Hooking 钩子](https://attack.mitre.org/techniques/T1179/)
 
 > Tactic: Persistence, Privilege Escalation, Credential Access
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, SYSTEM
-> Data Sources: API monitoring, Binary file metadata, DLL monitoring, Loaded DLLs, Process monitoring, Windows event logs
+>
+> Data Sources: API monitoring, Binary file metadata, DLL monitoring, Loaded DLLs, Process monitoring, 
+>
+> Windows event logs
+>
 > Version: 1.0
 
 Windows 进程通常利用 API 函数来执行需要重用系统资源的任务，Hooking 的目的就是重定向调用这些功能，实现方式有以下几种：
@@ -311,11 +402,17 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 ### [T1183 - Image File Execution Options Injection IFEO 注入](https://attack.mitre.org/techniques/T1183/)
 
 > Tactic: Privilege Escalation, Persistence, Defense Evasion
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, SYSTEM
+>
 > Data Sources: Process monitoring, Windows Registry, Windows event logs
+>
 > Defense Bypassed: Autoruns Analysis
+>
 > Contributors: Oddvar Moe, @oddvarmoe
+>
 > Version: 1.0
 
 映像文件执行选项（IFEO）使得开发人员能够将调试器 attach 到要调试的应用程序上，开发人员通过注册表设置 IFEOs 值，就可以将软件 attach 到一个要调试的程序上，之后只要一启动软件，被 attach 的程序也会一起启动。利用这种方式，攻击者可以修改此注册键值将恶意代码注入到目标软件中，当目标软件启动时，被注入的恶意代码就会一起启动，同时获得持久性和权限提升。
@@ -325,10 +422,15 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 ### [T1160 - Launch Daemon 守护进程](https://attack.mitre.org/techniques/T1160/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: macOS
+>
 > Permissions Required: Administrator
+>
 > Effective Permissions: root
+>
 > Data Sources: Process monitoring, File monitoring
+>
 > Version: 1.0
 
 根据苹果的官方文档，当 macOS 和 OS X 启动时，将运行 launchd 来完成系统初始化，这个过程会从 `/System/Library/LaunchDaemons` 和 `/Library/LaunchDaemons` 中的属性列表（plist）文件中为每个计划启动的系统级守护进程加载参数。
@@ -340,12 +442,19 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 ### [T1050 - New Service 新服务](https://attack.mitre.org/techniques/T1050/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: Administrator, SYSTEM
+>
 > Effective Permissions: SYSTEM
+>
 > Data Sources: Windows Registry, Process monitoring, Process command-line parameters, Windows event logs
+>
 > CAPEC ID: [CAPEC-550](https://capec.mitre.org/data/definitions/550.html)
+>
 > Contributors: Pedro Harrison
+>
 > Version: 1.0
 
 当操作系统启动时，服务会在后台启动以执行系统功能。服务的配置信息，包括服务的可执行文件路径，都存储在 Windows 注册表中。
@@ -357,10 +466,15 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 ### [T1502 - Parent PID Spoofing 父进程标识符欺骗](https://attack.mitre.org/techniques/T1502/)
 
 > Tactic: Defense Evasion, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: User, Administrator
+>
 > Data Sources: Windows event logs, Process monitoring, API monitoring
+>
 > Defense Bypassed: Host forensic analysis, Heuristic Detection
+>
 > Contributors: Wayne Silva, Countercept
 
 新进程通常直接从父进程或调用进程派生，除非显式指定。显式分配新进程 PPID 的一种方法是通过调用 `CreateProcess API`，它支持定义要使用的 PPID 的参数。在系统（通常是通过`svchost.exe` 或 `consent.exe`）生成请求权限提升的进程后，由用户帐户控制（UAC）等 Windows 特性使用此功能来正确设置PPID。攻击者可以利用这个特性，伪造新进程的父进程标识符（PPID）来逃避监视和提高权限，或者利用管理员权限生成一个新进程，并将父进程分配为以 SYSTEM 权限运行的进程（如 lsass.exe），从而通过继承访问令牌的方式提升新进程的权限。
@@ -372,11 +486,17 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 ### [T1034 - Path Interception 路径拦截](https://attack.mitre.org/techniques/T1034/)
 
 > Tactic: Persistence, Privilege Escalation
+>
 > Platform: Windows
+>
 > Permissions Required: User, Administrator, SYSTEM
+>
 > Effective Permissions: User, Administrator, SYSTEM
+>
 > Data Sources: File monitoring, Process monitoring
+>
 > CAPEC ID: [CAPEC-159](https://capec.mitre.org/data/definitions/159.html)
+>
 > Contributors: Stefan Kanthak
 
 当可执行文件被放在特定的路径中，由其他应用程序而不是预期的程序执行时，就会发生路径拦截。比如，在一个有漏洞的应用程序的当前工作目录中使用 cmd 的副本，该应用程序使用 `CreateProcess` 函数加载 cmd 或 BAT 文件。
