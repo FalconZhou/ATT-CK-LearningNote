@@ -1,45 +1,37 @@
 [TOC]
 
+## TA0003 - 持久性 Persistence
 
+在这个环节攻击者试图保持他们的立足点（持久性）。
 
-## TA0004 - 提权 Privilege Escalation
-
-在这个环节攻击者试图获得系统或网络上更高级别的权限（提权）。
-
-攻击者通常可以使用无特权账户进入和探索网络，但是需要更高的权限才能实现目标。常见的方法是利用系统弱点、错误配置和漏洞进行权限提升，以获取系统/根级别帐户、本地管理员帐户、具有与管理员类似访问权限的帐户、具有对特定系统的访问权限或执行特定功能的帐户。这些技术通常与持久性技术（[TA0003](https://attack.mitre.org/tactics/TA0003/)）有重叠之处，以允许攻击者在系统的上下文中持久地执行操作。
+攻击者利用持久性技术以确保在重启、更改凭证和其他可能切断其访问的事件发生之后，仍能保持对系统的访问。
 
 
 
-### [T1134 - Access Token Manipulation  访问令牌操作](https://attack.mitre.org/techniques/T1134/)
+### [T1156 - .bash_profile and .bashrc](https://attack.mitre.org/techniques/T1156/)
 
-> Tactic: Defense Evasion, Privilege Escalation
-> Platform: Windows
+> Tactic: Persistence
+>
+> Platform: Linux, macOS
+>
 > Permissions Required: User, Administrator
-> Effective Permissions: SYSTEM
-> Data Sources: API monitoring, Access tokens, Process monitoring, Process command-line parameters
-> CAPEC ID: [CAPEC-633](https://capec.mitre.org/data/definitions/633.html)
-> Contributors: Tom Ueltschi @c_APT_ure; Travis Smith, Tripwire; Robby Winchester, @robwinchester3; Jared Atkinson, @jaredcatkinson
-> Version: 1.0
+>
+> Data Sources: File monitoring, Process monitoring, Process command-line parameters, Process use of network
+>
+> Version: 1.1
 
-#### 概述
+`~/.bash_profile` 和 `~/.bashrc`  是包含 shell 命令的 shell 脚本。These files are executed  in a user's context when a new shell opens or when a user logs in so  that their environment is set correctly. `~/.bash_profile` is executed for login shells and `~/.bashrc`  is executed for interactive non-login shells. This means that when a  user logs in (via username and password) to the console (either locally  or remotely via something like SSH), the `~/.bash_profile`  script is executed before the initial command prompt is returned to the  user. After that, every time a new shell is opened, the `~/.bashrc`  script is executed. This allows users more fine-grained control over  when they want certain commands executed. These shell scripts are meant  to be written to by the local user to configure their own environment. 
 
-Windows 使用访问令牌来确定正在运行的进程的所有权，用户可以对访问令牌进行操作，使正在运行的进程看起来像是属于其他用户，而不是启动该进程的实际用户。当这种情况发生时，该进程还接受与新令牌相关联的安全上下文（security context）。Microsoft 提倡使用访问令牌作为安全最佳实践，管理员应该以普通用户身份登录，但使用内置的访问令牌操作命令 [runas](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490994(v=technet.10)?redirectedfrom=MSDN) ，以管理员权限运行他们的工具。
+攻击者可能会通过插入任意的shell命令来滥用这些shell脚本，这些命令可用于执行其他二进制文件以获得持久性。每当用户登录或打开一个新shell时，修改后的~/。bash_profile和/或~ /。将执行bashrc脚本。
 
-攻击者可以使用访问令牌在不同的用户或系统的安全上下文中进行操作，以执行命令和逃避检测。他们会使用内置的 Windows API 函数从现有的进程中复制访问令牌，这也被称之为令牌窃取。然而，令牌窃取的前提是攻击者必须已经拥有了管理员权限，之后攻击者通过令牌窃取将其身份的安全上下文从管理员级别提升到系统级别（SYSTEM）。
 
-攻击者可以通过以下三种方法利用访问令牌：
 
-- 令牌模拟/窃取（Token Impersonation/Theft）：攻击者使用 `DuplicateToken(Ex)` 创建一个新的访问令牌，并用该令牌复制现有的令牌。这个令牌可以与 `ImpersonateLoggedOnUser` 一起使用，以允许调用线程在用户的安全上下文中模拟一次登录，或者与 `SetThreadToken` 一起将模拟的令牌分配给线程。当目标用户在系统上有一个非网络的登录会话时，这非常有用。
-- 使用令牌创建进程（Create Process with a Token）：攻击者使用 `DuplicateToken(Ex)` 复制并创建一个新的访问令牌，并使用 `CreateProcessWithTokenW` 创建一个新进程，并在被模拟用户的安全上下文中运行。当在不同用户的安全上下文中创建新进程时，这非常有用。
-- 制作和模拟令牌（Make and Impersonate Token）：当攻击者拥有用户名和密码，但是该用户没有登录过系统。这时，攻击者就可以使用 `LogonUser` 函数为用户创建登录会话，该函数将返回新会话的访问令牌的一份拷贝，之后攻击者可以使用 `SetThreadToken` 将该令牌分配给线程。
+Adversaries  may abuse these shell scripts by inserting arbitrary shell commands  that may be used to execute other binaries to gain persistence. Every  time the user logs in or opens a new shell, the modified ~/.bash_profile  and/or ~/.bashrc scripts will be executed.
 
-需要注意的是，任何普通用户都可以使用 `runas` 命令和 `Windows API` 函数来创建模拟令牌，它不需要管理员帐户权限。
 
-Meterpreter 中的 payload 允许任意的令牌操作，并使用模拟令牌来提升权限；Cobalt Strike beacon 中的 payload 也允许任意的令牌模拟，并创建新的令牌。
 
-#### 检测
+~ /。bash_profile和~ /。bashrc是包含shell命令的shell脚本。当新shell打开或用户登录以正确设置其环境时，这些文件将在用户的上下文中执行。~ /。bash_profile用于登录shell和~/。bashrc用于交互式的非登录shell。这意味着当用户(通过用户名和密码)登录到控制台(本地或通过类似SSH的远程方式)时，使用~/。bash_profile脚本在初始命令提示符返回给用户之前执行。之后，每次打开一个新shell， ~/。执行bashrc脚本。这允许用户在希望执行某些命令时进行更细粒度的控制。这些shell脚本由本地用户编写，以配置他们自己的环境。
 
-- 审计命令行活动来检测令牌操作，比如对 runas 常见命令做匹配。
 
 
 
@@ -74,6 +66,24 @@ Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前
 
 
 
+### [T1098 - Account Manipulation 账户操作](https://attack.mitre.org/techniques/T1098/)
+
+> Tactic: Credential Access, Persistence
+>
+> Platform: Windows, Office 365, Azure, GCP, Azure AD, AWS
+>
+> System Requirements: Exchange  email account takeover: Sufficient permission to run the  Add-MailboxPermission PowerShell cmdlet (depending on parameters used,  may require more permission)
+>
+> Permissions Required: Administrator
+>
+> Data Sources: Authentication logs, API monitoring, Windows event logs, Packet capture
+>
+> Contributors: Jannie Li, Microsoft Threat Intelligence Center (MSTIC); Praetorian; Tim MalcomVetter
+>
+> Version: 2.0
+
+
+
 ### [T1182 - AppCert DLLs 注入](https://attack.mitre.org/techniques/T1182/)
 
 > Tactic: Persistence, Privilege Escalation
@@ -100,7 +110,6 @@ Windows 自带的辅助功能（轻松使用）特性可以在用户登录之前
 利用 AppInit DLLs 注册表项来实现 DLL 注入。Windows 允许加载了 user32.dll 的进程加载处于注册表 `HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` 或 `HKLM\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs` 下的 DLL 文件。所以只需要在 AppInit_DLLs 下写入 DLL 的绝对路径，并把数值改为 1，就可以使得所有加载 user32.dll 的进程全部加载目标路径的 DLL 文件。由于 user32.dll 是一个非常常用的库，在实际情况下，这个 DLL 几乎会被加载到每一个进程。
 
 与进程注入（[Process Injection](https://attack.mitre.org/techniques/T1055)）类似，攻击者可以利用这个值在独立进程的上下文中加载和运行恶意 DLL，以获得持久性和权限提升。
-
 
 在 Windows 8 及以后的版本中，当启用安全启动（secure boot）时，将禁用 AppInit DLL 的功能。
 
@@ -142,28 +151,139 @@ Application Shim（Microsoft Windows Application Compatibility Infrastructure/Fr
   - Shim-Guard - 监视任何安装 shim 的注册表行为
   - ShimScanner - 检查在内存中活跃的兼容性修补程序
   - ShimCacheMem - 从内存中提取 shim 缓存
-
 - 监视 sdbinst.exe 的进程执行和命令行参数
 
 
 
-### [T1088 - Bypass User Account Control 绕过用户帐户控制](https://attack.mitre.org/techniques/T1088/)
+### [T1131 - Authentication Package](https://attack.mitre.org/techniques/T1131/)
 
-> Tactic: Defense Evasion, Privilege Escalation
+> Tactic: Persistence
+>
 > Platform: Windows
-> Permissions Required: User, Administrator
-> Effective Permissions: Administrator
-> Data Sources: System calls, Process monitoring, Authentication logs, Process command-line parameters
-> Defense Bypassed: Windows User Account Control
-> Contributors: Stefan Kanthak; Casey Smith
+>
+> Permissions Required: Administrator
+>
+> Data Sources: DLL monitoring, Windows Registry, Loaded DLLs
+>
 > Version: 1.0
 
-Windows 用户帐户控制（User Account Control，UAC）允许程序通过提示用户是否对应用程序授权，来提升权限，以执行管理员权限下的任务，影响范围十分广泛。
 
-如果 UAC 保护等级设置为最高等级以外的任何等级，则某些 Windows 应用程序可以在不通过 UAC 提示框的情况下进行权限提升，或执行某些可自动提权的 COM 对象。
 
-目前已经公开过很多种绕过 UAC 的方式，Github 上的 [UACME](https://github.com/hfiref0x/UACME) 项目包含了一个完整了 UAC 可利用方式列表。此外，还有一些其他的绕过方式，比如使用 `eventvwr.exe` 可以自动提升权限并执行指定的二进制文件或脚本；由于 UAC 是单系统环境下的安全机制，所以在某一个系统上运行的进程的权限和完整性级别（Integrity Level），对于其他系统是未知的（默认具有高完整性级别），如果知道管理员帐户的凭据，则可以通过一些横向移动技术进行绕过。
+### [T1197 - BITS Jobs](https://attack.mitre.org/techniques/T1197/)
 
+> Tactic: Defense Evasion, Persistence
+>
+> Platform: Windows
+>
+> Permissions Required: User, Administrator, SYSTEM
+>
+> Data Sources: API monitoring, Packet capture, Windows event logs
+>
+> Defense Bypassed: Firewall, Host forensic analysis
+>
+> Contributors: Ricardo Dias; Red Canary
+>
+> Version: 1.0
+
+
+
+### [T1067 - Booktkit](https://attack.mitre.org/techniques/T1067/)
+
+> Tactic: Persistence
+>
+> Platform: Linux, Windows
+>
+> Permissions Required: Administrator, SYSTEM
+>
+> Data Sources: API monitoring, MBR, VBR
+>
+> Version: 1.0
+
+
+
+### [T1176 - Browser Extensions](https://attack.mitre.org/techniques/T1176/)
+
+> Tactic: Persistence
+>
+> Platform: Linux, macOS, Windows
+>
+> Permissions Required: User
+>
+> Data Sources: Network protocol analysis, Packet capture, System calls, Process use of network, Process monitoring, Browser extensions
+>
+> Contributors: Justin Warner, ICEBRG
+>
+> Version: 1.0
+
+
+
+### [T1042 - Change Default File Association](https://attack.mitre.org/techniques/T1042/)
+
+> Tactic: Persistence
+>
+> Platform: Windows
+>
+> Permissions Required: User, Administrator, SYSTEM
+>
+> Data Sources: Windows Registry, Process monitoring, Process command-line parameters
+>
+> CAPEC ID: [CAPEC-556](https://capec.mitre.org/data/definitions/556.html)
+>
+> Contributors: Stefan Kanthak; Travis Smith, Tripwire
+>
+> Version: 1.0
+
+
+
+### [T1109 - Component Firmware](https://attack.mitre.org/techniques/T1109/)
+
+> Tactic: Defense Evasion, Persistence
+>
+> Platform: Windows
+>
+> System Requirements: Ability to update component device firmware from the host operating system.
+>
+> Permissions Required: SYSTEM
+>
+> Data Sources: Disk forensics, API monitoring, Process monitoring, Component firmware
+>
+> Defense Bypassed: File monitoring, Host intrusion prevention systems, Anti-virus
+>
+> Version: 1.0
+
+
+
+### [T1122 - Componet Object Model Hijacking](https://attack.mitre.org/techniques/T1122/)
+
+> Tactic: Defense Evasion, Persistence
+>
+> Platform: Windows
+>
+> Permissions Required: User
+>
+> Data Sources: Windows Registry, DLL monitoring, Loaded DLLs
+>
+> Defense Bypassed: Autoruns Analysis
+>
+> Contributors: ENDGAME
+>
+> Version: 1.0
+
+
+
+### [T1136 - Create Account](https://attack.mitre.org/techniques/T1136/)
+
+> Tactic: Persistence
+>
+> Platform: Linux, macOS, Windows, AWS, GCP, Azure AD, Azure, Office 365
+>
+> Permissions Required: Administrator
+>
+> Data Sources: Office  365 account logs, Azure activity logs, AWS CloudTrail logs, Process  monitoring, Process command-line parameters, Authentication logs,  Windows event logs
+>
+> Contributors: Microsoft Threat Intelligence Center (MSTIC); Praetorian
+>
+> Version: 2.0
 
 
 
@@ -202,25 +322,9 @@ Windows 系统使用一种常见的方法来查找需要加载到程序中的 DL
 
 macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序中的 Dylib 动态链接库，攻击者可以利用模糊路径来植入 Dylib，以获得特权升级或持久性。
 
-
 攻击者可以通过查看应用程序使用了什么 Dylib，然后在合法 Dylib 的搜索路径之前植入同名的恶意 Dylib，这个位置通常是程序当前的工作目录。
 
-
 如果将程序在高于当前用户的权限级别上运行，那么当将 Dylib 加载到应用程序中时，Dylib 也将在更高的权限上运行，使攻击者实现权限提升。
-
-
-
-### [T1514 - Elevated Execution with Prompt 命令行权限提升](https://attack.mitre.org/techniques/T1514/)
-
-> Tactic: Privilege Escalation
-> Platform: macOS
-> Permissions Required: Administrator, User
-> Effective Permissions: root
-> Data Sources: File monitoring, Process monitoring, API monitoring
-> Contributors: Erika Noerenberg, @gutterchurl, Carbon Black; Jimmy Astle, @AstleJimmy, Carbon Black
-> Version: 1.0
-
-攻击者可以利用 `AuthorizationExecuteWithPrivileges` API 提示用户输入凭据，从而提升权限。这个 API 的最初目的是为应用程序开发人员提供一种使用 root 权限执行操作的简便方法，例如用于应用程序的安装或更新。当调用此 API 时，将提示用户输入他们的凭据，但不会验证请求 root 权限的程序来源是否可靠或者是否已经被恶意修改，攻击者可能会利用这个 API 结合钓鱼的方式来欺骗用户授权，以使恶意程序能够在 root 权限下执行。
 
 
 
@@ -238,7 +342,6 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 
 攻击者可以通过在事件触发器（predictable event triggers）上执行恶意指令来使用事件监视器守护进程（Event Monitor Daemon，emond）建立持久性。Emond 是一个守护进程（[Launch Daemon](https://attack.mitre.org/techniques/T1160)），它接受来自各种服务的事件，通过规则采取行动。在 `/sbin/emond` 处的 emond 程序将从 `/etc/emond.d/rules/` 中读取规则（plist格式），一旦有显式事件发生，就立即采取行动。如果路径 `/private/var/db/emondClients` 下没有文件存在 emond 服务将不会启动。
 
-
 攻击者可以利用这个服务，编写一条规则，在定义的事件发生时执行恶意指定。当 emond 服务使用 root 权限执行时，攻击者就可以将特权从管理员升级到 root 权限。
 
 #### 检测
@@ -247,30 +350,21 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 
 
 
-### [T1068 - Exploitation for Privilege Escalation 漏洞利用](https://attack.mitre.org/techniques/T1068/)
+### [T1133 - External Remote Services](https://attack.mitre.org/techniques/T1133/)
 
-> Tactic: Privilege Escalation
-> Platform: Linux, macOS, Windows
-> System Requirements: In the case of privilege escalation, the adversary likely already has user permissions on the target system.
-> Permissions Required: User
-> Effective Permissions: User, Administrator, SYSTEM/root
-> Data Sources: Windows Error Reporting, Process monitoring, Application logs
-> Version: 1.1
-
-程序、服务、操作系统软件或内核本身可能存在漏洞，存在漏洞的程序可能以较高权限运行在操作系统中，攻击者可以利用这些漏洞来获得对系统更高级别的访问权限。
-
-
-
-### [T1181 - Extra Window Memory Injection EWM 注入](https://attack.mitre.org/techniques/T1181/)
-
-> Tactic: Defense Evasion, Privilege Escalation
+> Tactic: Persistence, Initial Access
+>
 > Platform: Windows
-> Permissions Required: Administrator, SYSTEM
-> Data Sources: API monitoring, Process monitoring
-> Defense Bypassed: Anti-virus, Host intrusion prevention systems, Data Execution Prevention
-> Version: 1.0
-
-在创建窗口之前，基于图形化窗口的进程必须要注册一个 Windows 类，这时应用程序可以申请一小部分的额外内存空间（EWM），EWMI 的原理就是将恶意代码注入到资源管理器（Explorer）窗口的额外窗口内存中。
+>
+> Permissions Required: User
+>
+> Data Sources: Authentication logs
+>
+> CAPEC ID: [CAPEC-555](https://capec.mitre.org/data/definitions/555.html)
+>
+> Contributors: Daniel Oakley; Travis Smith, Tripwire
+>
+> Version: 2.0
 
 
 
@@ -294,7 +388,11 @@ macOS 和 OS X 系统使用一种常见的方法来查找需要加载到程序�
 - Windows 服务：攻击者用恶意程序替换 windows 服务中正常的可执行文件。
 - 可执行的安装程序：在安装过程中，安装程序通常使用 `%TEMP%` 目录中的子目录来解压二进制文件，当安装程序创建子目录和文件时，它们通常不会设置适当的权限来限制写访问，这就允许攻击者可以利用这种缺陷，在子目录中执行不受信任的代码，或者覆盖安装过程中使用的二进制文件。这种行为同时可能与 [DLL Search Order Hijacking](https://attack.mitre.org/techniques/T1038) 和 [Bypass User Account Control](https://attack.mitre.org/techniques/T1088) 相关。由于一些安装程序可能需要提升权限，这将导致攻击者植入的恶意代码也以更高权限执行。
 
+## 
 
+## T1158 - Hidden Files and Directories
+
+## 
 
 ### [T1179 - Hooking 钩子](https://attack.mitre.org/techniques/T1179/)
 
@@ -314,7 +412,11 @@ Windows 进程通常利用 API 函数来执行需要重用系统资源的任务�
 
 Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来隐藏文件、进程、注册表项和其他对象，以隐藏恶意软件和其相关行为。
 
+## 
 
+## T1062 - Hypervisor
+
+## 
 
 ### [T1183 - Image File Execution Options Injection IFEO 注入](https://attack.mitre.org/techniques/T1183/)
 
@@ -330,6 +432,20 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 
 
 
+## 
+
+## T1525 - Implant Container Image
+
+## 
+
+## T1215 - Kernel Modules and Extensions
+
+## 
+
+## T1159 - Launch Agent
+
+## 
+
 ### [T1160 - Launch Daemon 守护进程](https://attack.mitre.org/techniques/T1160/)
 
 > Tactic: Persistence, Privilege Escalation
@@ -342,6 +458,38 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 根据苹果的官方文档，当 macOS 和 OS X 启动时，将运行 launchd 来完成系统初始化，这个过程会从 `/System/Library/LaunchDaemons` 和 `/Library/LaunchDaemons` 中的属性列表（plist）文件中为每个计划启动的系统级守护进程加载参数。
 
 攻击者可以创建一个新的守护进程，使用 launchd 或 launchctl 将 plist 加载到特定目录，以在启动时执行这个守护进程，守护进程的名称可以伪装成系统进程或正常软件。由于守护进程可以使用管理员权限创建，在 root 权限下执行，因此攻击者可以将权限从管理员升级到 root。
+
+## 
+
+## T1152 - Launchctl
+
+## 
+
+## T1161 - LC_LOAD_DYLIB Addition
+
+## 
+
+## T1168 - Local Job Scheduling
+
+## 
+
+## T1162 - Login Item
+
+## 
+
+## T1037 - Logon Scripts
+
+## 
+
+## T1177 - LSASS Driver
+
+## 
+
+## T1031 - Modify Existing Service
+
+## 
+
+## T1128 - Netsh Helper DLL
 
 
 
@@ -362,21 +510,7 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 
 
 
-### [T1502 - Parent PID Spoofing 父进程标识符欺骗](https://attack.mitre.org/techniques/T1502/)
-
-> Tactic: Defense Evasion, Privilege Escalation
-> Platform: Windows
-> Permissions Required: User, Administrator
-> Data Sources: Windows event logs, Process monitoring, API monitoring
-> Defense Bypassed: Host forensic analysis, Heuristic Detection
-> Contributors: Wayne Silva, Countercept
-
-新进程通常直接从父进程或调用进程派生，除非显式指定。显式分配新进程 PPID 的一种方法是通过调用 `CreateProcess API`，它支持定义要使用的 PPID 的参数。在系统（通常是通过`svchost.exe` 或 `consent.exe`）生成请求权限提升的进程后，由用户帐户控制（UAC）等 Windows 特性使用此功能来正确设置PPID。攻击者可以利用这个特性，伪造新进程的父进程标识符（PPID）来逃避监视和提高权限，或者利用管理员权限生成一个新进程，并将父进程分配为以 SYSTEM 权限运行的进程（如 lsass.exe），从而通过继承访问令牌的方式提升新进程的权限。
-
-
-
-
-显式地分配 PPID 还可以启用特权升级(给予父进程适当的访问权限)。例如，特权用户上下文中的敌手(即管理员)可能生成一个新进程，并将父进程分配为作为系统运行的进程(如lsass.exe)，从而通过继承的访问令牌提升新进程
+## T1137 - Office Application Startup
 
 
 
@@ -393,6 +527,14 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 当可执行文件被放在特定的路径中，由其他应用程序而不是预期的程序执行时，就会发生路径拦截。比如，在一个有漏洞的应用程序的当前工作目录中放置 cmd 的副本，使该应用程序调用 `CreateProcess` 函数加载 cmd 程序或 BAT 文件。
 
 在执行路径拦截时，攻击者可能会利用多个明显的漏洞或错误配置，比如：未引用的路径（Unquoted Paths）、路径环境变量错误配置（PATH Environment Variable Misconfiguration）和搜索顺序劫持（Search Order Hijacking）。
+
+
+
+## T1150 - Plist Modification
+
+## 
+
+## T1205 - Port Knocking
 
 
 
@@ -413,7 +555,6 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 > Version: 1.0
 
 可以通过调用端口监视器的 API 来在启动时加载特定的DLL。这个 DLL 可以位于 `C:\Windows\System32` 下并将在系统引导时被 `spoolsv.exe`加载，此进程会在系统权限下运行。另外，如果权限允许将 DLL 的绝对路径写入`HKLM\SYSTEM\CurrentControlSet\Control\Print\`中，则可以加载任意 DLL。
-
 
 该注册表项包含以下条目：
 
@@ -448,27 +589,19 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 
 
 
-### [T1055 - Process Injection 进程注入](https://attack.mitre.org/techniques/T1055/)
+## T1163 - Rc.common
 
-> Tactic: Defense Evasion, Privilege Escalation
->
-> Platform: Linux, macOS, Windows
->
-> Permissions Required: User, Administrator, SYSTEM, root
->
-> Effective Permissions: User, Administrator, SYSTEM, root
->
-> Data Sources: API monitoring, Windows Registry, File monitoring, DLL monitoring, Process monitoring, Named Pipes
->
-> Defense Bypassed: Process whitelisting, Anti-virus
->
-> CAPEC ID: [CAPEC-640](https://capec.mitre.org/data/definitions/640.html)
->
-> Contributors: Anastasios Pingios; Christiaan Beek, @ChristiaanBeek; Ryan Becwar
->
-> Version: 1.0
+## 
 
-进程注入是在独立活动进程的地址空间中执行任意代码的方法，在另一个进程的上下文中运行恶意代码可能允许访问进程的内存、系统、网络资源，并提高权限。
+## T1164 - Re-opend Applications
+
+## 
+
+## T1108 - Redundant Access
+
+## 
+
+## T1060 - Registry Run Keys / Startup Folder
 
 
 
@@ -494,8 +627,19 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 
 诸如 [at](https://attack.mitre.org/software/S0110) 和 [schtasks](https://attack.mitre.org/software/S0111) 之类的实用工具，以及 Windows 任务调度程序（Windows Task Scheduler），可以用来自定义在某个日期和时间执行程序或脚本，也可以在远程系统上调度任务。条件是满足使用 RPC 的身份验证，并打开文件和打印机共享。在远程系统上调度任务通常需要成为远程系统上 Administrators 组的成员。
 
-
 攻击者可以使用计划任务在系统启动时执行程序，以实现持久性和获得系统权限，或在指定帐户的上下文中运行进程。
+
+
+
+## T1180 - Screensaver
+
+## 
+
+## T1101 - Security Support Provider
+
+## 
+
+## T1505 - Server Software Component
 
 
 
@@ -521,7 +665,6 @@ Hooking 通常被 [Rootkits](https://attack.mitre.org/techniques/T1014) 用来�
 
 Windows 在 `HKLM\SYSTEM\CurrentControlSet\Services` 的注册表项中存储本地服务配置信息。可以通过服务控制器、sc.exe、PowerShell 或 Reg 等工具操作存储在服务注册表项下的信息，以修改服务的执行参数。
 
-
 如果没有正确设置用户和组的权限并允许访问服务的注册表项，则攻击者可以更改服务的相关路径，使其指向攻击者控制下的其他可执行程序。当服务启动或重新启动时，由攻击者控制的程序就将执行，从而允许攻击者获得持久性和权限提升。
 
 
@@ -546,64 +689,31 @@ Windows 在 `HKLM\SYSTEM\CurrentControlSet\Services` 的注册表项中存储本
 
 
 
-### [T1178 - SID-History Injection](https://attack.mitre.org/techniques/T1178/)
+## T1023 - Shortcut Modification
 
->Tactic: Privilege Escalation                                        
->
->Platform: Windows
->
->Permissions Required: Administrator, SYSTEM
->
->Data Sources: API monitoring, Authentication logs, Windows event logs
->
->Contributors: Vincent Le Toux; Alain Homewood, Insomnia Security
->
->Version: 1.0
+## 
 
-Windows 安全标识符（SID）是唯一标识用户或组帐户身份的值，在安全描述符和访问令牌中都使用了 SID。一个帐户可以在 SID-History Active Directory 属性中持有额外的 SID，从而允许域之间进行帐户迁移。
+## T1198 - SIP and Trust Provider Hijacking
 
+## 
 
-攻击者可以利用此机制进行权限提升，即使用域管理员（或等效的）权限，将获得的或已知的 SID 值插入到 SID-History 记录中，以启用对任意用户/组的身份的模拟。这种操作可以结合横向移动技术，以获得对本地资源和其他不可访问域的访问权限。
+## T1165 - Startup Items
 
+## 
 
+## T1019 - System Firmware
 
-### [T1169 - Sudo 命令](https://attack.mitre.org/techniques/T1169/)
+## 
 
-> Tactic: Privilege Escalation
->
-> Platform: Linux, macOS
->
-> Permissions Required: User
->
-> Effective Permissions: root
->
-> Data Sources: File monitoring
->
-> Version: 1.0
+## T1501 - Systemd Service
 
-sudoers 文件（`/etc/sudoers`）描述了哪些用户可以执行哪些命令以及从哪些终端执行这些命令，这还描述了哪些命令用户可以作为其他用户或组运行。这实现了最小权限的思想，可以保证用户在大多数时间都以他们可能的最低权限运行，并且在需要将权限提升到其他用户权限时，通常需要根据提示输入密码。但是 sudoers 文件也可以指定何时不需要提示用户输入密码，比如 `user1 ALL=(ALL) NOPASSWD: ALL`。
+## 
 
-攻击者可以修改此文件使其作为其他用户执行命令，或者以更高的权限运行进程。
+## T1209 - Time Providers
 
+## 
 
-
-### [T1206 - Sudo Caching](https://attack.mitre.org/techniques/T1206/)
-
-> Tactic: Privilege Escalation
->
-> Platform: Linux, macOS
->
-> Permissions Required: User
->
-> Effective Permissions: root
->
-> Data Sources: File monitoring, Process command-line parameters
->
-> Version: 1.0
-
-sudo命令允许系统管理员授权给某些用户（或用户组）以 root 用户或其他用户的身份运行某些命令，而 sudo 能够缓存一段时间的访问凭证，通过 timestamp_timeout 字段（时间记录在`/var/db/sudo`文件下）判定用户登录是否超时而重新提示输入密码。此外，还有一个tty_tickets变量，它独立地处理每个新的 tty（终端会话）。
-
-攻击者可以利用这种糟糕的配置来提升权限，而不需要管理员的密码。可以监视 `/var/db/sudo` 的时间戳，看它是否在 timestamp_timeout 范围内，如果在范围内，则恶意软件可以直接执行 sudo 命令，而不需要提供用户的密码。当 tty_tickets 被禁用时，攻击者可以从任何 tty 执行此操作。
+## T1154 - Trap
 
 
 
@@ -655,3 +765,10 @@ Web shell 是放置在可公开访问的 Web 服务器上的 Web 脚本，允许
 
 攻击者可以利用 Web shell 作为冗余访问（[Redundant Access](https://attack.mitre.org/techniques/T1108)）和持久性机制，以防万一攻击者的主要访问手段被发现和清除。
 
+
+
+## T1084 - Windows Management Instrumentation Event Subscription
+
+## 
+
+## T1004 - Winlogon Helper DLL
